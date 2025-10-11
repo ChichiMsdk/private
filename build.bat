@@ -1,8 +1,19 @@
 @echo off
 rem -- Script setup --------------------------------------------------------------------
-cd /D "%~dp0"
-if exist C:\Users\mouschi\Downloads\msvc\setup.bat @call "C:\Users\mouschi\Downloads\msvc\setup.bat"
 setlocal
+cd /D "%~dp0"
+
+if exist C:\Users\mouschi\Downloads\msvc\setup.bat (
+  @call "C:\Users\mouschi\Downloads\msvc\setup.bat"
+  set WV_INCLUDE=C:\Users\mouschi\Downloads\webview2\build\native\include
+  set WEBVIEW=C:\Users\mouschi\Downloads\webview2\build\native\x64
+)
+
+if exist C:\vc_env\msvc\setup.bat (
+  @call "C:\vc_env\msvc\setup.bat"
+  set WV_INCLUDE=C:\Users\chiha\Desktop\webview\build\native\include
+  set WEBVIEW=C:\Users\chiha\Desktop\webview\build\native\x64
+)
 
 where /q cl || (
   echo ERROR: "cl" not found - please run from MSVC x64 native tools command prompt.
@@ -19,7 +30,7 @@ if "%msvc%"=="1"    set clang=0 && echo [msvc compile]
 if "%clang%"=="1"   set msvc=0 && echo [clang compile]
 
 rem -- CRT_NO_CRT ----------------------------------------------------------------------
-
+set crt=0
 if not "%crt%"=="1" (
   echo [NO_CRT LINKED]
   set def_crt=/DNO_CRT_LINKED
@@ -44,6 +55,14 @@ set ext=.dll
 set out_path=%bin%\%program%
 set out_path_debug=%bin%\%program%_debug
 
+set def_dll=
+set lk_dll=
+
+if "%ext%"==".dll" (
+  set def_dll=/DCM_DLL
+  set lk_dll=/DLL
+)
+
 rem -- Resource options ---------------------------------------------------------------
 set assets=assets
 set rc_res=%bin%\resource.res
@@ -63,16 +82,13 @@ set no_cpp_options=/EHsc /EHa- /GR-
 set cc_secure=/GS- /guard:cf-
 set cc_options=/options:strict %no_cpp_options% %cc_secure% /FC /c /Tc 
 set cc_diag=/diagnostics:caret
-set show_includes=/showIncludes
-set show_includes=
-set cc=cl %show_includes% /nologo %cc_diag% %cc_options%
-set cc_includes=/I%src_dir% /Ichihab /IC:\Users\mouschi\Downloads\webview2\build\native\include
-set cc_def=%cc_def%
-set cc_def=%cc_def% %def_crt%
+
+set cc=cl /nologo %cc_diag% %cc_options%
+set cc_includes=/I%src_dir% /Ichihab /I%WV_INCLUDE%
+set cc_def=%cc_def% %def_crt% %def_dll%
 
 rem -- (4090)const/volatile (4189)var init unused (5045)spectre mitigation -------------
-set cc_w=/Wall /WX /wd4090 /wd4189 /wd5045
-set cc_w=/wd4090 /wd4189 /wd5045 /wd4047 /wd4133 /wd4024 /wd4022
+set cc_w=/wd4090 /wd4189 /wd5045 /wd4047 /wd4133 /wd4024 /wd4022 /wd4113
 set cc_std=/experimental:c11atomics /std:clatest
 set cc_opti=/Os /Oi
 set cc_dbg=/Zi
@@ -90,7 +106,7 @@ set cc_out_debug=/Fo:%cc_obj_debug% %cc_pdb_out_debug%
 set cc_flags=%cc_w% %cc_def% %cc_dbg% %cc_nocrt% %cc_std% %cc_opti% %cc_includes% %cc_asan%
 
 rem -- MSVC linker options ------------------------------------------------------------
-set linker=link /nologo /DLL /INCREMENTAL:NO
+set linker=link /nologo /INCREMENTAL:NO %lk_dll%
 set l_debug=/DEBUG:FULL /DYNAMICBASE:NO
 set l_sys=/PROFILE /GUARD:NO
 set l_opt=/OPT:ICF /OPT:REF
@@ -103,10 +119,7 @@ set l_files_debug=/ILK:%out_path_debug%.ilk /MAP:%out_path_debug%.map /PDB:%out_
 rem -- Libraries ----------------------------------------------------------------------
 rem set d3d12libs=d3dcompiler.lib D3D12.lib dxgi.lib dxguid.lib dwmapi.lib 
 set win_libs=Shlwapi.lib Ole32.lib Kernel32.lib User32.lib Gdi32.lib
-set libpath=/LIBPATH:C:\Users\mouschi\Downloads\webview2\build\native\x64
-rem set libpath=
-rem set weblibs=%libpath% WebView2Loader.dll.lib winhttp.lib uuid.lib
-set weblibs=%libpath% winhttp.lib uuid.lib
+set weblibs=/LIBPATH:%WEBVIEW% winhttp.lib uuid.lib
 set libs=%win_libs% %c_libs% %d3d12libs% %crt_libs% %weblibs%
 
 set l_all=%l_debug% %l_options% %libs% %l_delay% %l_opti%
@@ -142,4 +155,3 @@ rem longsure raddbg --auto-run
 
 rem -- Misc ---------------------------------------------------------------------------
 rem ctags -f tags --langmap=c:.c.h --languages=c -R src
-rem ctags -a tags --langmap=c:.c.h --languages=c -R vendor
