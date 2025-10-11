@@ -1,0 +1,34 @@
+// raddbg 0.9.16 project file
+
+recent_file: path: "cm_win32.c"
+recent_file: path: "../jasb/src/main.c"
+recent_file: path: "D:/a/_work/1/s/src/vctools/crt/vcstartup/src/startup/exe_common.inl"
+recent_file: path: "cm_proc_threads.c"
+recent_file: path: "D:/a/_work/1/s/src/vctools/asan/llvm/compiler-rt/lib/sanitizer_common/sanitizer_common_interceptors.inc"
+recent_file: path: "vccrt/vcruntime/inc/internal_shared.h"
+recent_file: path: "minkernel/crts/ucrt/src/appcrt/stdio/output.cpp"
+recent_file: path: "../../vc_env/msvc/Windows Kits/10/include/10.0.26100.0/ucrt/stdio.h"
+recent_file: path: "test.c"
+recent_file: path: "cm_io.c"
+breakpoint:
+{
+  source_location: "C:/devel/chihab/test.c:86:1"
+  hit_count: 0
+}
+target:
+{
+  executable: "../jasb/bin/jasb_debug.exe"
+  working_directory: "../jasb"
+  enabled: 1
+  arguments: "sdf asdlkfjasdf lkasdjf laskdfj"
+}
+breakpoint:
+{
+  source_location: "C:/devel/chihab/cm_win32.c:85:1"
+  hit_count: 1
+}
+breakpoint:
+{
+  source_location: "C:/devel/jasb/src/main.c:48:1"
+  hit_count: 0
+}
