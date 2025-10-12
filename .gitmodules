@@ -1,0 +1,3 @@
+[submodule "chihab"]
+	path = chihab
+	url = https://github.com/ChichiMsdk/cm_lib

@@ -92,6 +92,8 @@ bool	g_once = false;
 bool	g_done = false;
 char	*g_cookie;
 
+#define my_function(x, y) ({ int __err = 0; do { __err = function(x, y); switch(__err) { case ERROR: fprintf(stderr, "Error!\n"); break; }} while(0); __err; })
+
 HRESULT
 script_webview(HRESULT err, wchar_t* result_json)
 {

@@ -3,22 +3,26 @@ rem -- Script setup ------------------------------------------------------------
 setlocal
 cd /D "%~dp0"
 
+set HOME=%HOMEDRIVE%\%HOMEPATH%
+
 if exist C:\Users\mouschi\Downloads\msvc\setup.bat (
   @call "C:\Users\mouschi\Downloads\msvc\setup.bat"
-  set WV_INCLUDE=C:\Users\mouschi\Downloads\webview2\build\native\include
-  set WEBVIEW=C:\Users\mouschi\Downloads\webview2\build\native\x64
+  set WV_INCLUDE=%HOME%\Downloads\webview2\build\native\include
+  set WEBVIEW=%HOME%\Downloads\webview2\build\native\x64
 )
 
 if exist C:\vc_env\msvc\setup.bat (
   @call "C:\vc_env\msvc\setup.bat"
-  set WV_INCLUDE=C:\Users\chiha\Desktop\webview\build\native\include
-  set WEBVIEW=C:\Users\chiha\Desktop\webview\build\native\x64
+  set WV_INCLUDE=%HOME%\Desktop\webview\build\native\include
+  set WEBVIEW=%HOME%\Desktop\webview\build\native\x64
 )
 
 where /q cl || (
   echo ERROR: "cl" not found - please run from MSVC x64 native tools command prompt.
   exit /b 1
 )
+
+rem -- Ensure we have git submodules --------------------------------------------------
 
 rem -- Get command-line arguments -----------------------------------------------------
 for %%a in (%*) do set "%%a=1"
