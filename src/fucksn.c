@@ -13,77 +13,82 @@
 
 #define APPLICATION_NAME TEXT("WebView2")
 
-HWND hWnd = NULL;
-BOOL bEnvCreated = FALSE;
-ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler* envHandler;
-ICoreWebView2CreateCoreWebView2ControllerCompletedHandler* completedHandler;
-ICoreWebView2Controller* webviewController = NULL;
-ICoreWebView2* webviewWindow = NULL;
-
-ULONG HandlerRefCount = 0;
-ULONG HandlerAddRef(IUnknown* This) { return ++HandlerRefCount; }
-ULONG HandlerRelease(IUnknown* This)
+typedef struct WebView2_Global
 {
-	--HandlerRefCount;
-	if (HandlerRefCount) return HandlerRefCount;
-	if (completedHandler)
+  bool                                                        created;
+  uint32_t                                                    ref_count;
+  ICoreWebView2*                                              window;
+  ICoreWebView2Controller*                                    controller;
+  ICoreWebView2CreateCoreWebView2ControllerCompletedHandler*  controller_handler;
+  ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler* environment_handler;
+} WebView2_Global;
+
+WebView2_Global g_webview = {0};
+
+HWND g_hwnd = NULL;
+uint32_t handler_add_ref(IUnknown* this) { return ++g_webview.ref_count; }
+uint32_t handler_release(IUnknown* this)
+{
+	--g_webview.ref_count;
+	if (g_webview.ref_count) return g_webview.ref_count;
+	if (g_webview.controller_handler)
 	{
-		heap_free_dz(completedHandler->lpVtbl);
-		heap_free_dz(completedHandler);
+		heap_free_dz(g_webview.controller_handler->lpVtbl);
+		heap_free_dz(g_webview.controller_handler);
 	}
-	if (envHandler)
+	if (g_webview.environment_handler)
 	{
-		heap_free_dz(envHandler->lpVtbl);
-		heap_free_dz(envHandler);
+		heap_free_dz(g_webview.environment_handler->lpVtbl);
+		heap_free_dz(g_webview.environment_handler);
 	}
-	return HandlerRefCount;
+	return g_webview.ref_count;
 }
 
-HRESULT HandlerQueryInterface(IUnknown* This, IID* riid, void** ppvObject)
-{ *ppvObject = This; HandlerAddRef(This); return S_OK; }
+HRESULT handler_query_interface(IUnknown* this, IID* riid, void** ppvObject)
+{ *ppvObject = this; handler_add_ref(this); return S_OK; }
 
 HRESULT
-HandlerInvoke(IUnknown* This, HRESULT errorCode, void* arg)
+handler_invoke(IUnknown* this, HRESULT errorCode, void* arg)
 {
-	if (!bEnvCreated)
+	if (!g_webview.created)
 	{
-		bEnvCreated = TRUE;
-		heap_alloc_dz(sizeof(ICoreWebView2CreateCoreWebView2ControllerCompletedHandler), completedHandler);
-		heap_alloc_dz(sizeof(ICoreWebView2CreateCoreWebView2ControllerCompletedHandlerVtbl), completedHandler->lpVtbl);
+		g_webview.created = true;
+		heap_alloc_dz(sizeof(ICoreWebView2CreateCoreWebView2ControllerCompletedHandler), g_webview.controller_handler);
+		heap_alloc_dz(sizeof(ICoreWebView2CreateCoreWebView2ControllerCompletedHandlerVtbl), g_webview.controller_handler->lpVtbl);
 
-		completedHandler->lpVtbl->AddRef         = HandlerAddRef;
-		completedHandler->lpVtbl->Invoke         = HandlerInvoke;
-		completedHandler->lpVtbl->Release        = HandlerRelease;
-		completedHandler->lpVtbl->QueryInterface = HandlerQueryInterface;
+		g_webview.controller_handler->lpVtbl->AddRef         = handler_add_ref;
+		g_webview.controller_handler->lpVtbl->Invoke         = handler_invoke;
+		g_webview.controller_handler->lpVtbl->Release        = handler_release;
+		g_webview.controller_handler->lpVtbl->QueryInterface = handler_query_interface;
 
 		ICoreWebView2Environment* env = arg;
-		env->lpVtbl->CreateCoreWebView2Controller(env, hWnd, completedHandler);
+		env->lpVtbl->CreateCoreWebView2Controller(env, g_hwnd, g_webview.controller_handler);
 	}
 	else
 	{
 		ICoreWebView2Controller* controller = arg;
 		if (controller)
 		{
-			webviewController = controller;
-			webviewController->lpVtbl->get_CoreWebView2(webviewController, &webviewWindow);
-			webviewController->lpVtbl->AddRef(webviewController);
+			g_webview.controller = controller;
+			g_webview.controller->lpVtbl->get_CoreWebView2(g_webview.controller, &g_webview.window);
+			g_webview.controller->lpVtbl->AddRef(g_webview.controller);
 		}
-		ICoreWebView2Settings* Settings;
-		webviewWindow->lpVtbl->get_Settings(webviewWindow, &Settings);
-		Settings->lpVtbl->put_IsScriptEnabled(Settings, TRUE);
-		Settings->lpVtbl->put_AreDefaultScriptDialogsEnabled(Settings, TRUE);
-		Settings->lpVtbl->put_IsWebMessageEnabled(Settings, TRUE);
-		Settings->lpVtbl->put_AreDevToolsEnabled(Settings, FALSE);
-		Settings->lpVtbl->put_AreDefaultContextMenusEnabled(Settings, TRUE);
-		Settings->lpVtbl->put_IsStatusBarEnabled(Settings, TRUE);
+		ICoreWebView2Settings* settings;
+		g_webview.window->lpVtbl->get_Settings(g_webview.window, &settings);
+		settings->lpVtbl->put_IsScriptEnabled(settings, TRUE);
+		settings->lpVtbl->put_AreDefaultScriptDialogsEnabled(settings, TRUE);
+		settings->lpVtbl->put_IsWebMessageEnabled(settings, TRUE);
+		settings->lpVtbl->put_AreDevToolsEnabled(settings, FALSE);
+		settings->lpVtbl->put_AreDefaultContextMenusEnabled(settings, TRUE);
+		settings->lpVtbl->put_IsStatusBarEnabled(settings, TRUE);
 
 		RECT bounds;
-		GetClientRect(hWnd, &bounds);
-		webviewController->lpVtbl->put_Bounds(webviewController, bounds);
-		wchar_t* url = L"https://digit.service-now.com/now/sow/home";
-		webviewWindow->lpVtbl->Navigate(webviewWindow, url);
-		SetProp(hWnd, L"WEBVIEW", webviewWindow);
-		SetProp(hWnd, L"WEBVIEWCONTROLLER", webviewController);
+		GetClientRect(g_hwnd, &bounds);
+		g_webview.controller->lpVtbl->put_Bounds(g_webview.controller, bounds);
+		wchar_t* url = L"https://digituat.service-now.com/now/sow/home";
+		g_webview.window->lpVtbl->Navigate(g_webview.window, url);
+		SetProp(g_hwnd, L"WEBVIEW", g_webview.window);
+		SetProp(g_hwnd, L"WEBVIEWCONTROLLER", g_webview.controller);
 	}
 	return S_OK;
 }
@@ -91,8 +96,6 @@ HandlerInvoke(IUnknown* This, HRESULT errorCode, void* arg)
 bool	g_once = false;
 bool	g_done = false;
 char	*g_cookie;
-
-#define my_function(x, y) ({ int __err = 0; do { __err = function(x, y); switch(__err) { case ERROR: fprintf(stderr, "Error!\n"); break; }} while(0); __err; })
 
 HRESULT
 script_webview(HRESULT err, wchar_t* result_json)
@@ -146,9 +149,9 @@ script_webview(HRESULT err, wchar_t* result_json)
 }
 
 void
-on_key_down(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+on_key_down(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
-	if ((GetKeyState(VK_CONTROL) & 0x8000) && (wParam == 'D'))
+	if ((GetKeyState(VK_CONTROL) & 0x8000) && (wparam == 'D'))
 	{
 		ICoreWebView2* webview = (ICoreWebView2*)GetProp(hwnd, L"WEBVIEW");
 		if (!webview) { report_error_box("GetProp"); exit(1); }
@@ -157,39 +160,41 @@ on_key_down(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 }
 
 LRESULT CALLBACK
-WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+WindowProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
 {
-	switch (uMsg)
+	switch (umsg)
 	{
-		case WM_KEYDOWN: on_key_down(hWnd, uMsg, wParam, lParam); return 0;
+		case WM_KEYDOWN: on_key_down(hwnd, umsg, wparam, lparam); return 0;
 		case WM_SIZE:
 			{
-				if (webviewController)
+				if (g_webview.controller)
 				{
 					RECT bounds;
-					GetClientRect(hWnd, &bounds);
-					webviewController->lpVtbl->put_Bounds(webviewController, bounds);
+					GetClientRect(hwnd, &bounds);
+					g_webview.controller->lpVtbl->put_Bounds(g_webview.controller, bounds);
 				};
 				break;
 			}
-		default: return DefWindowProc(hWnd, uMsg, wParam, lParam);
+		case WM_QUIT: ExitProcess(1);
+		default: return DefWindowProc(hwnd, umsg, wparam, lparam);
 	}
 	return 0;
 }
 
 LRESULT CALLBACK
-blabla(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+blabla(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
 {
-	switch (uMsg)
+	switch (umsg)
 	{
-		default: return DefWindowProc(hWnd, uMsg, wParam, lParam);
+		default: return DefWindowProc(hwnd, umsg, wparam, lparam);
 	}
 	return 0;
 }
 
 typedef HRESULT (*LPFN_WV) (PCWSTR, PCWSTR, ICoreWebView2EnvironmentOptions*, ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler*);
 
-DWORD real_start(void* param)
+DWORD
+real_start(void* param)
 {
   char *webview_path = "C:\\Users\\mouschi\\Downloads\\webview2\\runtimes\\win-x64\\native\\WebView2Loader.dll";
   webview_path = "C:\\devel\\webview\\runtimes\\win-x64\\native\\WebView2Loader.dll";
@@ -207,30 +212,30 @@ DWORD real_start(void* param)
 		.lpszClassName = APPLICATION_NAME,
 	};
 
-	hWnd = CreateWindowEx(0, (LPCWSTR)( MAKEINTATOM( RegisterClass(&wndClass))), APPLICATION_NAME, WS_OVERLAPPEDWINDOW, 100, 100, 800, 800, NULL, NULL, NULL, NULL);
-	if (!hWnd) {report_error_box("CreateWindowEx"); exit(1);}
+	g_hwnd = CreateWindowEx(0, (LPCWSTR)( MAKEINTATOM( RegisterClass(&wndClass))), APPLICATION_NAME, WS_OVERLAPPEDWINDOW, 100, 100, 800, 800, NULL, NULL, NULL, NULL);
+	if (!g_hwnd) {report_error_box("CreateWindowEx"); exit(1);}
 
 	HWND main_window = CreateWindowEx(0, (LPCWSTR)( MAKEINTATOM( RegisterClass(&wndClass))), APPLICATION_NAME, WS_OVERLAPPEDWINDOW, 100, 100, 800, 800, NULL, NULL, NULL, NULL);
-	if (!hWnd) {report_error_box("CreateWindowEx"); exit(1);}
+	if (!g_hwnd) {report_error_box("CreateWindowEx"); exit(1);}
 
-	ShowWindow(hWnd, SW_SHOWNORMAL);
+	ShowWindow(g_hwnd, SW_SHOWNORMAL);
 
-	heap_alloc_dz(sizeof(ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler), envHandler);
-	heap_alloc_dz(sizeof(ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandlerVtbl), envHandler->lpVtbl);
+	heap_alloc_dz(sizeof(ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler), g_webview.environment_handler);
+	heap_alloc_dz(sizeof(ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandlerVtbl), g_webview.environment_handler->lpVtbl);
 
-	envHandler->lpVtbl->AddRef = HandlerAddRef;
-	envHandler->lpVtbl->Invoke = HandlerInvoke;
-	envHandler->lpVtbl->Release = HandlerRelease;
-	envHandler->lpVtbl->QueryInterface = HandlerQueryInterface;
+	g_webview.environment_handler->lpVtbl->AddRef = handler_add_ref;
+	g_webview.environment_handler->lpVtbl->Invoke = handler_invoke;
+	g_webview.environment_handler->lpVtbl->Release = handler_release;
+	g_webview.environment_handler->lpVtbl->QueryInterface = handler_query_interface;
 
-	UpdateWindow(hWnd);
+	UpdateWindow(g_hwnd);
 
 	LPFN_WV cwv2_create_with_options = (LPFN_WV) GetProcAddress(wv_lib, "CreateCoreWebView2EnvironmentWithOptions");
 	if (!cwv2_create_with_options) {report_error_box("GetProcAddress"); return 1;}
 
   wchar_t *trash_path = L"C:\\Users\\mouschi\\Downloads\\fuckservicenow";
   trash_path = L"C:\\devel\\private";
-	cwv2_create_with_options(NULL, trash_path, NULL, envHandler);
+	cwv2_create_with_options(NULL, trash_path, NULL, g_webview.environment_handler);
 
 	MSG msg;
 	BOOL bRet;
@@ -245,25 +250,26 @@ DWORD real_start(void* param)
 	}
   return 1;
 }
-
+#include "error.c"
 void
 curl(char* url)
 {
 	// Now make a simple HTTPS GET to protected resource with WinHTTP
-	wchar_t *agent = L"MyUserAgent/1.0";
+	wchar_t *agent = L"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:143.0) Gecko/20100101 Firefox/143.0";
 	DWORD proxy_opt    = WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY;
 	DWORD proxy_name   = WINHTTP_NO_PROXY_NAME;
 	DWORD proxy_bypass = WINHTTP_NO_PROXY_BYPASS;
 	HINTERNET session = WinHttpOpen(agent, proxy_opt, proxy_name, proxy_bypass, 0);
 	if (!session) { report_error_box("WinHttpOpen"); exit(1); }
 
-	wchar_t	*host = L"example.com";
-	wchar_t	*path = L"/protected/resource";
-
+	wchar_t	*host = L"digituat.service-now.com";
+	wchar_t	*path = L"/api/now/graphql";
 	HINTERNET cnct = WinHttpConnect(session, host, INTERNET_DEFAULT_HTTPS_PORT, 0);
 	if (!cnct) { report_error_box("WinHttpConnect"); WinHttpCloseHandle(session); exit(1); }
 
-	HINTERNET rqst = WinHttpOpenRequest(cnct, L"GET", path, NULL, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_SECURE);
+  wchar_t	*referrer = L"https://digituat.service-now.com/now/sow/record/interaction/b8c490552b243210729af47ebe91bfb6/params/extra-params/subTabIndex%2F0/selected-tab-index/0/selected-tab/id%3Dcl1kajg2y015e3f71kyb7f5qr/sub/record/incident/a11554552b243210729af47ebe91bf92";
+  wchar_t *types[] = {L"*/*"};
+	HINTERNET rqst = WinHttpOpenRequest(cnct, L"POST", path, referrer, NULL, types, WINHTTP_FLAG_SECURE);
 	if (!rqst) { report_error_box("OpenRequest"); WinHttpCloseHandle(cnct); WinHttpCloseHandle(session); exit(1); }
 
   /*
@@ -281,22 +287,61 @@ curl(char* url)
 	 * { report_error_box("AddRequestHeaders"); exit(1);}
    */
 
-	if (!WinHttpSendRequest(rqst, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0))
-	{ report_error_box("SendRequest"); exit(1);}
+  wchar_t *cookie =
+    L"Content-Type application/json";
+    /*
+     * L"Accept-Language: en-US,en;q=0.5\r\n"
+     * L"Accept-Encoding: gzip, deflate, br, zstd\r\n"
+     * L"now-ux-interaction: xhz3q4s7cnwz-20654\r\n"
+     * L"x-request-cancelable: cmgnzx9n3000h2a95umjt29ne-form_section_8e04439d77013010dc2c885d9f5a9908_reference_caller_id\r\n"
+     * L"x-transaction-source: Interface=Web,Interface-Type=Configurable Workspace,Interface-Name=Service Operations Workspace,Interface-SysID=aa881cad73c4301045216238edf6a716,Interface-URI=/now/sow/record/interaction/b8c490552b243210729af47ebe91bfb6/params/extra-params/subTabIndex%2F0/selected-tab-index/0/selected-tab/id%3Dcl1kajg2y015e3f71kyb7f5qr/sub/record/incident/a11554552b243210729af47ebe91bf92\r\n"
+     * L"x-usertoken: 70d966e12ba0b210729af47ebe91bfe0576a2f7d4f959a3ddb779cfc13aa5ddf2b51f03c\r\n"
+     * L"Origin: https://digituat.service-now.com\r\n"
+     * L"DNT: 1\r\n"
+     * L"Sec-GPC: 1\r\n"
+     * L"Sec-Fetch-Dest: empty\r\n"
+     * L"Sec-Fetch-Mode: cors\r\n"
+     * L"Sec-Fetch-Site: same-origin\r\n"
+     * L"Connection: keep-alive\r\n"
+     * L"Cookie: glide_user_route=glide.663f86fe884862f3a4671e8cd50bd134; glide_sso_id=ea698ec21b748c10e53dc9506e4bcb8e; BIGipServerpool_digituat=9c7f0f1612bfab18f52b5351949b02c0; JSESSIONID=AC700AB4ABA9A43A3F4ED2B8284201C0; glide_node_id_for_js=6020ee0e7cc8e143e7414a5588ada3a1f62e8d5af2c2f34687b86b5e67b0c1e0; glide_language=en; glide_user_activity=U0N2M18xOmN3eE9LQ2xLKzhSSUdXSk9lQm1kTHRycDljbW4za00rWnloYThlZmFrSTg9OjlaTFlkWVZkRkFsSllHWGZXbFRaK3FsS2tjR0J4aDQvWjlIYlp3eExUR3M9; __CJ_g_startTime=%221760291107512%22; glide_session_store=30D966E12BA0B210729AF47EBE91BFE0\r\n" L"Priority: u=4";
+     */
+  wchar_t *data = L"{\"operationName\":\"snRecordReferenceConnected\",\"query\":\"query snRecordReferenceConnected($table:String!$field:String!$sys_id:String$encodedRecord:String$serializedChanges:String$chars:String!$ignoreRefQual:Glide_Boolean$paginationLimit:Int$paginationOffset:Int$sortBy:String$referenceKey:String$overrideReferenceTable:String$query:String$orderByDisplayColumn:Glide_Boolean){GlideLayout_Query{referenceDataRetriever(tableName:$table fieldName:$field encodedRecord:$encodedRecord serializedChanges:$serializedChanges pagination:{limit:$paginationLimit offset:$paginationOffset}ignoreTotalCount:true sysId:$sys_id chars:$chars sysparm_ignore_ref_qual:$ignoreRefQual sortBy:$sortBy sysparm_ref_override:$overrideReferenceTable query:$query orderByDisplayColumn:$orderByDisplayColumn referenceKey:$referenceKey){totalCount recentCount matchesCount referenceRecentDataList{sysId referenceKeyValue referenceData{key value}}referenceDataList{sysId referenceKeyValue referenceData{key value}}}}}\",\"variables\":{\"table\":\"incident\",\"field\":\"caller_id\",\"sys_id\":\"a11554552b243210729af47ebe91bf92\",\"encodedRecord\":\"\",\"serializedChanges\":\"{\\\"caller_id\\\":\\\"\\\",\\\"location\\\":\\\"\\\"}\",\"chars\":\"C\",\"ignoreRefQual\":false,\"paginationLimit\":25,\"sortBy\":\"last_name\",\"referenceKey\":null,\"orderByDisplayColumn\":true},\"nowUxInteraction\":\"xhz3q4s7cnwz-20654\",\"nowUiInteraction\":\"xhz3q4s7cnwz-38975\",\"cacheable\":false,\"__unstableDisableBatching\":true,\"extensions\":{},\"queryContext\":null}";
+
+  if (!WinHttpAddRequestHeaders(rqst, cookie, wstrlen(cookie), WINHTTP_ADDREQ_FLAG_ADD))
+  {
+    DWORD prout = GetLastError();
+    printb("%s", winhttp_getstr(prout));
+    SetLastError(prout);
+    { report_error_box("AddRequestHeaders"); exit(1);}
+  }
+  /*
+	 * if (!WinHttpSendRequest(rqst, WINHTTP_NO_ADDITIONAL_HEADERS, 0, data, wstrlen(data), wstrlen(data), 0))
+	 * // if (!WinHttpSendRequest(rqst, cookie, -1L, data, wstrlen(data), wstrlen(data), 0))
+   * {
+   *   DWORD prout = GetLastError();
+   *   printb("%s", winhttp_getstr(prout));
+   *   SetLastError(prout);
+   *   { report_error_box("SendRequest"); exit(1);}
+   * }
+   */
 
 	if (!WinHttpReceiveResponse(rqst, NULL))
 	{ report_error_box("ReceiveResponse"); exit(1);}
 
-	// Read response (simple)
+  void* read_buffer;
+  uint64_t buffer_size = 10'000;
+  heap_alloc_dz(buffer_size, read_buffer);
+  DWORD read = 0;
+  if (!WinHttpReadData(rqst, read_buffer, buffer_size, &read))
+	{ report_error_box("ReadData"); exit(1);}
+  printb("Read: %d bytes", read);
+  printb("%s", read_buffer);
+
 	DWORD status = 0;
 	DWORD size = sizeof(status);
 	WinHttpQueryHeaders(rqst, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER, NULL, &status, &size, NULL);
-	char *buffer;
-	heap_alloc_dz(sizeof(char) * 1024, buffer);
-	wsprintf(buffer, "HTTP status: %u", (unsigned)status);
-	message_box(buffer);
+	printb("HTTP status: %u", (unsigned)status);
 
-	// cleanup
 	WinHttpCloseHandle(rqst);
 	WinHttpCloseHandle(cnct);
 	WinHttpCloseHandle(session);
@@ -304,7 +349,7 @@ curl(char* url)
 
 __declspec(dllexport) int start(void)
 {
-  /* real_start(NULL); */
+  // real_start(NULL);
 	curl(NULL);
   return 0;
 }
