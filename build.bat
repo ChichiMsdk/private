@@ -1,5 +1,4 @@
 @echo off
-rem -- Script setup --------------------------------------------------------------------
 setlocal
 cd /D "%~dp0"
 
@@ -21,8 +20,6 @@ where /q cl || (
   echo ERROR: "cl" not found - please run from MSVC x64 native tools command prompt.
   exit /b 1
 )
-
-rem -- Ensure we have git submodules --------------------------------------------------
 
 rem -- Get command-line arguments -----------------------------------------------------
 for %%a in (%*) do set "%%a=1"
@@ -131,28 +128,21 @@ set l_out=/OUT:%out_path%%ext%
 set l_out_debug=/OUT:%out_path_debug%%ext%
 
 rem -- NORMAL BUILD -------------------------------------------------------------------
-set compiling=%cc% %src_dir%\%source%.c %cc_flags% %cc_out%
-set linking=%linker% %cc_obj% %bin%\*.res %l_files% %l_out% %l_all%
-
-if "%release%"=="1" (
-	echo %compiling%
-	echo %linking%
-
-  %compiling% || exit /b 1
-  %linking%   || exit /b 1
+if "%release%"=="1"(
+  set compiling=%cc% %src_dir%\%source%.c %cc_flags% %cc_out%
+  set linking=%linker% %cc_obj% %bin%\*.res %l_files% %l_out% %l_all%
 )
 
-rem -- DEBUG BUILD --------------------------------------------------------------------
+if "%debug%"=="1"(
 set compiling=%cc% %src_dir%\%source%.c /DDEBUG %cc_flags% %cc_out_debug%
 set linking=%linker% %cc_obj_debug% %bin%\*.res %l_files_debug% %l_out_debug% %l_all%
-
-if "%debug%"=="1" (
-	echo %compiling%
-	echo %linking%
-
-  %compiling% || exit /b 1
-  %linking%   || exit /b 1
 )
+
+echo %compiling%
+echo %linking%
+
+%compiling% || exit /b 1
+%linking%   || exit /b 1
 
 rem -- Launch it ----------------------------------------------------------------------
 rem longsure raddbg --auto-run
