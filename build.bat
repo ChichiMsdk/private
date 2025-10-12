@@ -12,8 +12,8 @@ if exist C:\Users\mouschi\Downloads\msvc\setup.bat (
 
 if exist C:\vc_env\msvc\setup.bat (
   @call "C:\vc_env\msvc\setup.bat"
-  set WV_INCLUDE=%HOME%\Desktop\webview\build\native\include
-  set WEBVIEW=%HOME%\Desktop\webview\build\native\x64
+  set WV_INCLUDE=C:\devel\webview\build\native\include
+  set WEBVIEW=C:\devel\webview\build\native\x64
 )
 
 where /q cl || (
@@ -128,14 +128,14 @@ set l_out=/OUT:%out_path%%ext%
 set l_out_debug=/OUT:%out_path_debug%%ext%
 
 rem -- NORMAL BUILD -------------------------------------------------------------------
-if "%release%"=="1"(
+if "%release%"=="1" (
   set compiling=%cc% %src_dir%\%source%.c %cc_flags% %cc_out%
   set linking=%linker% %cc_obj% %bin%\*.res %l_files% %l_out% %l_all%
 )
 
-if "%debug%"=="1"(
-set compiling=%cc% %src_dir%\%source%.c /DDEBUG %cc_flags% %cc_out_debug%
-set linking=%linker% %cc_obj_debug% %bin%\*.res %l_files_debug% %l_out_debug% %l_all%
+if "%debug%"=="1" (
+  set compiling=%cc% %src_dir%\%source%.c /DDEBUG %cc_flags% %cc_out_debug%
+  set linking=%linker% %cc_obj_debug% %bin%\*.res %l_files_debug% %l_out_debug% %l_all%
 )
 
 echo %compiling%

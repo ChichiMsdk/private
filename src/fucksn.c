@@ -187,11 +187,13 @@ blabla(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-typedef HRESULT (*lpfn_wv) (PCWSTR, PCWSTR, ICoreWebView2EnvironmentOptions*, ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler*);
+typedef HRESULT (*LPFN_WV) (PCWSTR, PCWSTR, ICoreWebView2EnvironmentOptions*, ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler*);
 
 DWORD real_start(void* param)
 {
-	HMODULE wv_lib = LoadLibrary("C:\\Users\\mouschi\\Downloads\\webview2\\runtimes\\win-x64\\native\\WebView2Loader.dll");
+  char *webview_path = "C:\\Users\\mouschi\\Downloads\\webview2\\runtimes\\win-x64\\native\\WebView2Loader.dll";
+  webview_path = "C:\\devel\\webview\\runtimes\\win-x64\\native\\WebView2Loader.dll";
+	HMODULE wv_lib = LoadLibrary(webview_path);
 	if (!wv_lib) { report_error_box("LoadLibrary"); return 1;}
 	HRESULT hr;
 
@@ -223,9 +225,12 @@ DWORD real_start(void* param)
 
 	UpdateWindow(hWnd);
 
-	lpfn_wv cwv2_create_with_options = (lpfn_wv) GetProcAddress(wv_lib, "CreateCoreWebView2EnvironmentWithOptions");
+	LPFN_WV cwv2_create_with_options = (LPFN_WV) GetProcAddress(wv_lib, "CreateCoreWebView2EnvironmentWithOptions");
 	if (!cwv2_create_with_options) {report_error_box("GetProcAddress"); return 1;}
-	cwv2_create_with_options(NULL, L"C:\\Users\\mouschi\\Downloads\\fuckservicenow", NULL, envHandler);
+
+  wchar_t *trash_path = L"C:\\Users\\mouschi\\Downloads\\fuckservicenow";
+  trash_path = L"C:\\devel\\private";
+	cwv2_create_with_options(NULL, trash_path, NULL, envHandler);
 
 	MSG msg;
 	BOOL bRet;
