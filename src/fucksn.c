@@ -1,3 +1,7 @@
+/* vim: set path+=chihab: */
+/* vim: set path+=../webview2\build\native\include: */
+/* vim: set tags+=~\Downloads\webview2\build\native\include\tags: */
+/* vim: set tags+=~\Downloads\msvc\Windows\\\ Kits\10\Include\10.0.26100.0\um\tags: */
 #define COBJMACROS
 #define SUB_WINDOWS
 
@@ -48,7 +52,7 @@ HRESULT handler_query_interface(IUnknown* this, IID* riid, void** ppvObject)
 { *ppvObject = this; handler_add_ref(this); return S_OK; }
 
 HRESULT
-handler_invoke(IUnknown* this, HRESULT errorCode, void* arg)
+handler_invoke(IUnknown* this, HRESULT error_code, void* arg)
 {
 	if (!g_webview.created)
 	{
@@ -196,8 +200,7 @@ typedef HRESULT (*LPFN_WV) (PCWSTR, PCWSTR, ICoreWebView2EnvironmentOptions*, IC
 DWORD
 real_start(void* param)
 {
-  char *webview_path = "C:\\Users\\mouschi\\Downloads\\webview2\\runtimes\\win-x64\\native\\WebView2Loader.dll";
-  webview_path = "C:\\devel\\webview\\runtimes\\win-x64\\native\\WebView2Loader.dll";
+  char *webview_path = "..\\webview2\\runtimes\\win-x64\\native\\WebView2Loader.dll";
 	HMODULE wv_lib = LoadLibrary(webview_path);
 	if (!wv_lib) { report_error_box("LoadLibrary"); return 1;}
 	HRESULT hr;
