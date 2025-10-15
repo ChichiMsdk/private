@@ -99,7 +99,7 @@ real_start(void* param)
 	if (!cwv2_create_with_options) {report_error_box("GetProcAddress"); return 1;}
 
   wchar_t *trash_path = L"C:\\Users\\mouschi\\Downloads\\fuckservicenow";
-  /* trash_path = L"C:\\devel\\private"; */
+  trash_path = L"C:\\devel\\private";
 	cwv2_create_with_options(NULL, trash_path, NULL, g_webview.environment_handler);
 
 	MSG msg;
@@ -172,74 +172,42 @@ inline Proxy_Credentials credentials_alloc(user_size, pass_size)
 	return creds;
 }
 #include "console.c"
+#include "servicenow.c"
 void
 curl(void)
 {
 	STARTUPINFOA si = { sizeof(si) };
 	PROCESS_INFORMATION pi = { 0 };
 
-  /*
-	 * Proxy_Credentials creds = credentials_alloc(256, 256);
-	 * if (!gui_credentials_prompt(&creds)) { exit(1); }
-   */
-
-	// Now make a simple HTTPS GET to protected resource with WinHTTP
 	wchar_t *agent = L"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:143.0) Gecko/20100101 Firefox/143.0";
 	DWORD proxy_opt    = WINHTTP_ACCESS_TYPE_NO_PROXY;
-	proxy_opt = WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY;
+	// proxy_opt = WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY;
 	DWORD proxy_name   = WINHTTP_NO_PROXY_NAME;
 	DWORD proxy_bypass = WINHTTP_NO_PROXY_BYPASS;
 	HINTERNET session = http_open(agent, proxy_opt, proxy_name, proxy_bypass, 0);
 
-	wchar_t	*host = L"digit.service-now.com";
-	wchar_t *url  = L"https://digit.service-now.com/api/now/graphql";
-	/* url  = L"https://youtube.com"; */
-	/* host = L"youtube.com"; */
+	wchar_t	*host = L"digituat.service-now.com";
 	wchar_t	*path = L"/api/now/graphql";
-
-	/* http_get_proxy_for_url(session, url, &creds.proxy_options, &creds.proxy_info); */
 
 	HINTERNET cnct = http_connect(session, host, INTERNET_DEFAULT_HTTPS_PORT);
 	HINTERNET rqst = http_open_request(cnct, L"POST", path, NULL, NULL, WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_SECURE);
-
   /*
-	 * http_set_option(rqst, WINHTTP_OPTION_PROXY, &creds.proxy_info, sizeof(creds.proxy_info));
-	 * http_set_option(rqst, WINHTTP_OPTION_PROXY_USERNAME, creds.username, creds.user_size * 2);
-	 * http_set_option(rqst, WINHTTP_OPTION_PROXY_PASSWORD, creds.password, creds.pass_size * 2);
+   * DWORD dwFlags = SECURITY_FLAG_IGNORE_UNKNOWN_CA | SECURITY_FLAG_IGNORE_CERT_CN_INVALID | SECURITY_FLAG_IGNORE_CERT_DATE_INVALID;
+   * http_set_option(rqst, WINHTTP_OPTION_SECURITY_FLAGS, &dwFlags, sizeof(dwFlags));
    */
-
-
-	char *data = "{\"operationName\":\"snRecordReferenceConnected\",\"query\":\"query snRecordReferenceConnected($table:String!$field:String!$sys_id:String$encodedRecord:String$serializedChanges:String$chars:String!$ignoreRefQual:Glide_Boolean$paginationLimit:Int$paginationOffset:Int$sortBy:String$referenceKey:String$overrideReferenceTable:String$query:String$orderByDisplayColumn:Glide_Boolean){GlideLayout_Query{referenceDataRetriever(tableName:$table fieldName:$field encodedRecord:$encodedRecord serializedChanges:$serializedChanges pagination:{limit:$paginationLimit offset:$paginationOffset}ignoreTotalCount:true sysId:$sys_id chars:$chars sysparm_ignore_ref_qual:$ignoreRefQual sortBy:$sortBy sysparm_ref_override:$overrideReferenceTable query:$query orderByDisplayColumn:$orderByDisplayColumn referenceKey:$referenceKey){totalCount recentCount matchesCount referenceRecentDataList{sysId referenceKeyValue referenceData{key value}}referenceDataList{sysId referenceKeyValue referenceData{key value}}}}}\",\"variables\":{\"table\":\"interaction\",\"field\":\"opened_for\",\"sys_id\":\"-1\",\"encodedRecord\":\"77ee77ef77eSN2MyZDQ2ZjYzYjU2MTIxMDZlZDkxZDI0YzNlNDVhODPvt6zvt5Qx77es77etLUpxejZSVjk4ci1MN0hBeW1HVGdEZz09OE52WlV0ZU9RWFFRTnYxNXN0NkhyczAzOHNzaGZGejR1a0JkRklMbUNPbENoQlBsSTYxRTZ5akNTOXVMMVoyblZNeXFCem1Bc043ZmYzTko5bHpEZWhtZXU3Mm8wVDdkVE1SNXo2aEg4cUMzdWJGaVNMUjFvZll0OW5TZkRCS0ViMVgySUN1SUlIRWJjclRzT2R1Y3lBXzRoemRjQTdOcExNWEhLZEFtZjFTdnNUVjI2NXY0bUdNQ3JsRTZwU2t5VEdQLWZCZm4zWGVMZExhTGw4c1JPVG1ZLXhOdS1HM1BOMWJuWl9aSFFVLXpEV2lCbUdDNGk4cUVDeFJYMGxQOFlXTkE5cGltMS1uUnlQek5DSl9XSjNkZUhkYjJ1WlZOc1kwZlN4RzhVRlRCcWV1OEtzUUZKOUxsNWl5cmNyeTBPcnFCTFJLV1ZyWlZXWG9hVTdRLXlpRDJ1MmM5QlZMUGQxem9lSTVOaDlzc2lIV0V2bmNtOUFkY0NJX2JRRnZEemxIWFEteXpnaTQxeEs1QWZRRkFDaEdzM2dlQVVPdUY1Z0lhT1RkYlczUVhPbE5veXdRY0EzWjNvUjVIdkluUDJHNWFWb19VQlhMRERnZ29OZE8wV3Z2MHZ5T25FdzFndl94Wkk1clV6WDQ977eu77ev\",\"serializedChanges\":\"{\\\"assigned_to\\\":\\\"52b10f803b632a1097cb6547f4e45ac8\\\",\\\"assignment_group\\\":\\\"3efc509e87dd5910dd76873e8bbb354b\\\"}\",\"chars\":\"c\",\"ignoreRefQual\":false,\"paginationLimit\":25,\"sortBy\":\"name\",\"referenceKey\":null,\"orderByDisplayColumn\":true},\"nowUxInteraction\":\"ez7ff0jmd2xu-881\",\"nowUiInteraction\":\"ez7ff0jmd2xu-11535\",\"cacheable\":false,\"__unstableDisableBatching\":true,\"extensions\":{},\"queryContext\":null}";
-	wchar_t* headers = 
-		L"Accept: */*\r\n"
-		L"Accept-Encoding: gzip, deflate, br, zstd\r\n"
-		L"Accept-Language: en-US,en;q=0.9,en-IE;q=0.8\r\n"
-		L"Connection: keep-alive\r\n"
-		L"Content-Length: 2264\r\n"
-		L"Cookie: glide_sso_id=ea698ec21b748c10e53dc9506e4bcb8e; BIGipServerpool_digit=f29e46f58849f1a6c9eb36cf6a4bec0f; glide_user_route=glide.e78bd78402e8f271710f3ec687fa309d; glide_node_id_for_js=be0926185098e520392c47319999e3d13d4354965a39939a0a139832609c8f63; glide_language=en; JSESSIONID=6ACD31CF5AFD37812399234AF10EC025; glide_user_activity=U0N2M18xOnhXdG9hbTVMd0RCb2FPL3VHOS9TeTdJZFZEVGxQRHRCc3Zjc0RkVmxaSWM9OmpFZ0p0UDFJZFV6ei93RGlhZmFDdHE4dHRkOGhTcFkySVY3Ri9PR1dWajg9; glide_session_store=28D0E82A2B2076503463F7E0F291BF2B\r\n"
-		L"Host: digit.service-now.com\r\n"
-		L"Origin: https://digit.service-now.com\r\n"
-		/* L"Referer: https://digit.service-now.com/now/sow/record/interaction/-1_uid_3\r\n" */
-		L"Sec-Fetch-Dest: empty\r\n"
-		L"Sec-Fetch-Mode: cors\r\n"
-		L"Sec-Fetch-Site: same-origin\r\n"
-		L"User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0\r\n"
-		L"content-type: application/json\r\n"
-		L"now-ux-interaction: ez7ff0jmd2xu-881 \r\n"
-		L"sec-ch-ua: \"Microsoft Edge\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"\r\n"
-		L"sec-ch-ua-mobile: ?0\r\n"
-		L"sec-ch-ua-platform: \"Windows\"\r\n"
-		L"x-request-cancelable: cmgrl5t3000033j9fe63fqi10-form_section_27d659f353010110b569ddeeff7b12ee_reference_opened_for\r\n"
-		L"x-transaction-source: Interface=Web,Interface-Type=Configurable Workspace,Interface-Name=Service Operations Workspace,Interface-SysID=aa881cad73c4301045216238edf6a716\r\n"
-	  L"x-usertoken: 68d0e82a2b2076503463f7e0f291bf2bdbb0f2cf25dc570807ebad13acf5531899c103d0";
-
-  http_add_request_headers(rqst, headers, (DWORD)-1L, WINHTTP_ADDREQ_FLAG_ADD);
+  DWORD decompression = WINHTTP_DECOMPRESSION_FLAG_GZIP | WINHTTP_DECOMPRESSION_FLAG_DEFLATE;
+  WinHttpSetOption(rqst, WINHTTP_OPTION_DECOMPRESSION, &decompression, sizeof(decompression));
+  char     *autocomplete = sn_data_autocomplete;
+  http_add_request_headers(rqst, raw, (DWORD)-1L, WINHTTP_ADDREQ_FLAG_ADD);
+  DWORD redirect = 0;
+  DWORD size = sizeof(redirect);
+  WinHttpSetOption(rqst, WINHTTP_OPTION_CLIENT_CERT_CONTEXT, WINHTTP_NO_CLIENT_CERT_CONTEXT, 0);
+  WinHttpQueryOption(rqst, WINHTTP_OPTION_REDIRECT_POLICY, &redirect, &size);
 
 	bool done = false;
 	DWORD last_status = 0;
-	uint32_t data_len = strlen(data);
 	do {
-		http_send_request(rqst, WINHTTP_NO_ADDITIONAL_HEADERS, 0, data, data_len, data_len, 0);
+    http_send_request(rqst, WINHTTP_NO_ADDITIONAL_HEADERS, 0, autocomplete, strlen(autocomplete), strlen(autocomplete), 0);
 		http_receive_response(rqst);
 
 		void* read_buffer;
@@ -250,33 +218,35 @@ curl(void)
 		if (WinHttpQueryDataAvailable(rqst, &buffer_size))
 		{
 			heap_alloc_dz(buffer_size, read_buffer);
-			if (!WinHttpReadData(rqst, read_buffer, buffer_size, &read)) { report_error_box("ReadData"); exit(1);}
-			char* path = "C:\\Users\\mouschi\\Downloads\\fuckservicenow\\log.txt";
-			cmFile file;
-			if (file_open(path, GENERIC_READ | GENERIC_WRITE, 0, &file) != CM_OK) {report_error_box("file_open"); exit(1);}
-			write_file(file.h_file, read_buffer, read);
-			file_close(&file);
+			http_read_data(rqst, read_buffer, buffer_size, &read);
+      printb("%s", read_buffer);
+      heap_free_dz(read_buffer)
 		}
 
 		DWORD status = 0;
 		DWORD size = sizeof(status);
 		WinHttpQueryHeaders(rqst, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER, NULL, &status, &size, NULL);
-		/* printb("HTTP status: %u, Read: %d bytes |%s|", (unsigned) status, read, (char*)read_buffer); */
 
-		if (status == 407)
-		{
-			printb("Status 407 returned, needs auth!"); exit(1);
-      /*
-			 * WinHttpSetCredentials(rqst, WINHTTP_AUTH_TARGET_PROXY, WINHTTP_AUTH_SCHEME_BASIC, creds.username, creds.password,NULL);
-			 * WinHttpSendRequest(rqst, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0);
-			 * WinHttpReceiveResponse(rqst, NULL );
-			 * if (last_status == 407) done = true;
-       */
-		}
-		else break;
+    switch(status)
+    {
+      case 407:
+        printb("Status 407 returned, needs auth!"); exit(1);
+        /*
+         * WinHttpSetCredentials(rqst, WINHTTP_AUTH_TARGET_PROXY, WINHTTP_AUTH_SCHEME_BASIC, creds.username, creds.password,NULL);
+         * WinHttpSendRequest(rqst, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0);
+         * WinHttpReceiveResponse(rqst, NULL );
+         * if (last_status == 407) done = true;
+         */
+      case 200: done = true; break;
+      default: done = true; break;
+    }
 		last_status = status;
 	} while(!done);
 
+  /*
+   * heap_free_dz(headers);
+   * heap_free_dz(autocomplete);
+   */
 	WinHttpCloseHandle(rqst);
 	WinHttpCloseHandle(cnct);
 	WinHttpCloseHandle(session);
@@ -292,14 +262,6 @@ __declspec(dllexport) int start(void)
 /* BOOL DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved ) */
 ENTRY
 {
-	switch(fdwReason)
-	{
-		case DLL_PROCESS_ATTACH:
-			DisableThreadLibraryCalls(hinstDLL);
-			break;
-		case DLL_PROCESS_DETACH:
-			FreeConsole();
-			break;
-	}
-	return TRUE;
+  start();
+	RETURN_FROM_MAIN(1);
 }

@@ -12,8 +12,8 @@ if exist C:\Users\mouschi\Downloads\msvc\setup.bat (
 
 if exist C:\vc_env\msvc\setup.bat (
   @call "C:\vc_env\msvc\setup.bat"
-  set WV_INCLUDE=C:\devel\webview\build\native\include
-  set WEBVIEW=C:\devel\webview\build\native\x64
+  set WV_INCLUDE=C:\devel\webview2\build\native\include
+  set WEBVIEW=C:\devel\webview2\build\native\x64
 )
 
 where /q cl || (
@@ -52,7 +52,7 @@ set src_dir=src
 set program=fucksn
 set source=fucksn
 set bin=bin
-set ext=.dll
+set ext=.exe
 set out_path=%bin%\%program%
 set out_path_debug=%bin%\%program%_debug
 

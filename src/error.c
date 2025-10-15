@@ -9,6 +9,12 @@ winhttp_getstr(DWORD dw)
     case ERROR_WINHTTP_CANNOT_CONNECT:
       return "Returned if connection to the server failed.";
 
+    case ERROR_WINHTTP_CHUNKED_ENCODING_HEADER_SIZE_OVERFLOW:
+      return "Returned when an overflow condition is encountered in the course of parsing chunked encoding.";
+
+    case ERROR_WINHTTP_HEADER_COUNT_EXCEEDED:
+      return "Returned when a larger number of headers were present in a response than WinHTTP could receive.";
+
     case ERROR_WINHTTP_CLIENT_AUTH_CERT_NEEDED:
         " The secure HTTP server requires a client certificate. The application retrieves the list of certificate issuers by calling WinHttpQueryOption with the WINHTTP_OPTION_CLIENT_CERT_ISSUER_LIST option.\n"
           "If the server requests the client certificate, but does not require it, the application can alternately call WinHttpSetOption with the WINHTTP_OPTION_CLIENT_CERT_CONTEXT option. In this case, the application specifies the WINHTTP_NO_CLIENT_CERT_CONTEXT macro in the lpBuffer parameter of WinHttpSetOption. For more information, see the WINHTTP_OPTION_CLIENT_CERT_CONTEXT option.Windows Server 2003 with SP1, Windows XP with SP2 and Windows 2000:  This error is not supported.";
@@ -19,11 +25,17 @@ winhttp_getstr(DWORD dw)
     case ERROR_WINHTTP_INCORRECT_HANDLE_STATE:
         return "The requested operation cannot be carried out because the handle supplied is not in the correct state.";
 
+    case ERROR_WINHTTP_HEADER_SIZE_OVERFLOW:
+        return "Returned by WinHttpReceiveResponse when the size of headers received exceeds the limit for the request handle.";
+
     case ERROR_WINHTTP_INCORRECT_HANDLE_TYPE:
         return "The type of handle supplied is incorrect for this operation.";
 
     case ERROR_WINHTTP_INTERNAL_ERROR:
         return "An internal error has occurred.";
+
+    case ERROR_WINHTTP_INVALID_SERVER_RESPONSE:
+        return "The server response could not be parsed.";
 
     case ERROR_WINHTTP_INVALID_URL:
         return "The URL is invalid.";
@@ -53,21 +65,24 @@ winhttp_getstr(DWORD dw)
         return "The URL specified a scheme other than \"http:\" or \"https:\".";
 
     case ERROR_NOT_ENOUGH_MEMORY:
-
         return "Not enough memory was available to complete the requested operation. (Windows error code)\n"
           "Windows Server 2003, Windows XP and Windows 2000:  The TCP reservation range set with the WINHTTP_OPTION_PORT_RESERVATION option is not large enough to send this request.";
 
     case ERROR_INVALID_PARAMETER:
-
         return "The content length specified in the dwTotalLength parameter does not match the length specified in the Content-Length header.\n"
           "The lpOptional parameter must be NULL and the dwOptionalLength parameter must be zero when the Transfer-Encoding header is present.\n"
           "The Content-Length header cannot be present when the Transfer-Encoding header is present.";
 
     case ERROR_WINHTTP_RESEND_REQUEST:
         return "The application must call WinHttpSendRequest again due to a redirect or authentication challenge\n."
-          "Windows Server 2003 with SP1, Windows XP with SP2 and Windows 2000:  This error is not supported.";
+        "The WinHTTP function failed. The desired function can be retried on the same request handle.";
+
+    case ERROR_WINHTTP_REDIRECT_FAILED:
+        return "The redirection failed because either the scheme changed or all attempts made to redirect failed (default is five attempts).";
+
     default: break;
   }
-  return "Unknown";
+  printb("Error (%d) doesn't have an associated string with it.");
+  return "Unknown(%d)";
 }
 #endif //WINHTTP_ERROR_C
