@@ -3,6 +3,9 @@
 
 #define APPLICATION_NAME TEXT("WebView2")
 
+typedef ICoreWebView2CreateCoreWebView2ControllerCompletedHandler ControllerCompletedHandler;
+typedef ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler EnvironmentCompletedHandler;
+
 typedef struct WebView2_Global
 {
   bool                                                        created;

@@ -1,3 +1,6 @@
+#ifndef WINHTTP_ERROR_C
+#define WINHTTP_ERROR_C
+
 char*
 winhttp_getstr(DWORD dw)
 {
@@ -67,3 +70,4 @@ winhttp_getstr(DWORD dw)
   }
   return "Unknown";
 }
+#endif //WINHTTP_ERROR_C

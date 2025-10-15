@@ -119,7 +119,7 @@ set l_files_debug=/ILK:%out_path_debug%.ilk /MAP:%out_path_debug%.map /PDB:%out_
  
 rem -- Libraries ----------------------------------------------------------------------
 rem set d3d12libs=d3dcompiler.lib D3D12.lib dxgi.lib dxguid.lib dwmapi.lib 
-set win_libs=Shlwapi.lib Ole32.lib Kernel32.lib User32.lib Gdi32.lib
+set win_libs=Shlwapi.lib Ole32.lib Kernel32.lib User32.lib Gdi32.lib Credui.lib
 set weblibs=/LIBPATH:%WEBVIEW% winhttp.lib uuid.lib
 set libs=%win_libs% %c_libs% %d3d12libs% %crt_libs% %weblibs%
 
